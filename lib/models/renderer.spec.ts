@@ -1,6 +1,18 @@
 import { NgIf } from '@angular/common';
-import { Component, EventEmitter, Input, NgModule, OnInit, Output } from '@angular/core';
-import { InvalidInputBindError, InvalidStaticPropertyMockError, Renderer } from './renderer';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  NgModule,
+  OnInit,
+  Output,
+} from '@angular/core';
+import {
+  _renderingCache,
+  InvalidInputBindError,
+  InvalidStaticPropertyMockError,
+  Renderer,
+} from './renderer';
 import { TestSetup } from './test-setup';
 
 class TestUtility { // tslint:disable-line no-unnecessary-class
@@ -207,6 +219,31 @@ describe('Renderer', () => {
       const {instance} = await myRenderer.render('<b *ngIf="true"></b>');
 
       expect(instance instanceof NgIf).toBe(true);
+    });
+  });
+
+  describe('Caching', () => {
+    beforeAll(() => _renderingCache.clear());
+
+    it('should be able to set up a component for the first time', async () => {
+      const template = '<thing myInput="a" renamedInput="b"></thing>';
+      await renderer.render(template);
+
+      expect(_renderingCache.size).toEqual(1);
+    });
+
+    it('should reuse a cached instance if possible', async () => {
+      const template = '<thing myInput="a" renamedInput="b"></thing>';
+      await renderer.render(template);
+
+      expect(_renderingCache.size).toEqual(1);
+    });
+
+    it('should have an cached entry for each configuration', async () => {
+      const template = '<thing myInput="x" renamedInput="y"></thing>';
+      await renderer.render(template);
+
+      expect(_renderingCache.size).toEqual(2);
     });
   });
 });

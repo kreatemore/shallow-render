@@ -1,4 +1,4 @@
-import { Directive, EventEmitter, Type } from '@angular/core';
+import { DebugElement, Directive, EventEmitter, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Shallow } from '../shallow';
@@ -36,6 +36,16 @@ export class InvalidStaticPropertyMockError extends CustomError {
     super(`Tried to mock the '${String(key)}' property but only functions are supported for static mocks.`);
   }
 }
+
+interface RenderingOptions {
+  fixture: ComponentFixture<any>;
+  element: DebugElement;
+  instance: any; // TODO: Type
+  bindings: any; // TODO: Type
+}
+
+// TODO: Only exported for tests - yikes!
+export const _renderingCache = new Map<string, RenderingOptions>();
 
 export class Renderer<TComponent> {
   constructor(private readonly _setup: TestSetup<TComponent>) {}
@@ -102,8 +112,22 @@ export class Renderer<TComponent> {
       this._verifyComponentBindings(resolvedTestComponent, finalOptions.bind);
     }
 
+    const validTemplate = this._getValidTemplate(
+      template,
+      resolvedTestComponent,
+      finalOptions,
+    );
+    const cacheKey = `${validTemplate}${JSON.stringify(finalOptions)}`;
+
+    if (_renderingCache.has(cacheKey)) {
+      const cachedRendering = _renderingCache.get(cacheKey) as Rendering<TComponent, TBindings>;
+      this._spyOnOutputs(cachedRendering.instance, resolvedTestComponent);
+
+      return cachedRendering;
+    }
+
     const ComponentClass = createContainer(
-      template || this._createTemplateString(resolvedTestComponent, finalOptions.bind),
+      validTemplate,
       finalOptions.bind
     );
 
@@ -133,7 +157,28 @@ export class Renderer<TComponent> {
     await this._runComponentLifecycle(fixture, finalOptions);
     const element = this._getElement(fixture);
 
-    return new Rendering(fixture, element, instance, finalOptions.bind, this._setup);
+    const rendering = new Rendering(
+      fixture,
+      element,
+      instance,
+      finalOptions.bind,
+      this._setup,
+    );
+    _renderingCache.set(cacheKey, rendering);
+
+    return rendering;
+  }
+
+  private _getValidTemplate<TBindings>(
+    template: string | undefined,
+    resolvedTestComponent: Directive,
+    finalOptions: RenderOptions<TBindings>,
+  ): string {
+    if (!!template) {
+      return template;
+    }
+
+    return this._createTemplateString(resolvedTestComponent, finalOptions.bind);
   }
 
   private _spyOnOutputs(instance: TComponent, directive: Directive) {
