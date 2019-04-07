@@ -224,24 +224,23 @@ describe('Renderer', () => {
 
   describe('Caching', () => {
     beforeAll(() => _renderingCache.clear());
+    const template = '<thing myInput="a" renamedInput="b"></thing>';
 
     it('should be able to set up a component for the first time', async () => {
-      const template = '<thing myInput="a" renamedInput="b"></thing>';
       await renderer.render(template);
 
       expect(_renderingCache.size).toEqual(1);
     });
 
     it('should reuse a cached instance if possible', async () => {
-      const template = '<thing myInput="a" renamedInput="b"></thing>';
       await renderer.render(template);
 
       expect(_renderingCache.size).toEqual(1);
     });
 
     it('should have an cached entry for each configuration', async () => {
-      const template = '<thing myInput="x" renamedInput="y"></thing>';
-      await renderer.render(template);
+      const otherTemplate = '<thing myInput="x" renamedInput="y"></thing>';
+      await renderer.render(otherTemplate);
 
       expect(_renderingCache.size).toEqual(2);
     });

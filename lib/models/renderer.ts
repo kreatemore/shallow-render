@@ -157,13 +157,7 @@ export class Renderer<TComponent> {
     await this._runComponentLifecycle(fixture, finalOptions);
     const element = this._getElement(fixture);
 
-    const rendering = new Rendering(
-      fixture,
-      element,
-      instance,
-      finalOptions.bind,
-      this._setup,
-    );
+    const rendering = new Rendering(fixture, element, instance, finalOptions.bind, this._setup);
     _renderingCache.set(cacheKey, rendering);
 
     return rendering;

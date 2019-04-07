@@ -17,7 +17,7 @@ export class Rendering<TComponent, TBindings> {
     public readonly element: DebugElement,
     public readonly instance: TComponent,
     public readonly bindings: TBindings,
-    private readonly _setup: TestSetup<TComponent>,
+    private readonly _setup: TestSetup<TComponent>
   ) {}
 
   /////////////////////////////////////////////////////////////////////////////
